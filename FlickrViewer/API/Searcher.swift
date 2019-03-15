@@ -53,7 +53,7 @@ class Searcher: Searchable {
                 return
             }
             
-            guard response.statusCode == 400 else {
+            guard response.statusCode == 200 else {
                 DispatchQueue.main.async {
                     completion(.failure(.responseStatusError(status: response.statusCode,
                                                              message: "Failed with status: \(response.statusCode)")))
