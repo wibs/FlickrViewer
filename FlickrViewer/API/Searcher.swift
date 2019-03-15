@@ -40,18 +40,24 @@ class Searcher: Searchable {
         dataTask = session.dataTask(with: url) { data, response, error in
             
             if let error = error {
-                completion(.failure(.dataTaskError(error: error, message: "Failed to execute data task: \(error)")))
+                DispatchQueue.main.async {
+                    completion(.failure(.dataTaskError(error: error, message: "Failed to execute data task: \(error)")))
+                }
                 return
             }
             
             guard let data = data, let response = response as? HTTPURLResponse else {
-                completion(.failure(.responseError(message: "Failed to retrieve data from response")))
+                DispatchQueue.main.async {
+                    completion(.failure(.responseError(message: "Failed to retrieve data from response")))
+                }
                 return
             }
             
-            guard response.statusCode == 200 else {
-                completion(.failure(.responseStatusError(status: response.statusCode,
-                                                                   message: "Failed with status: \(response.statusCode)")))
+            guard response.statusCode == 400 else {
+                DispatchQueue.main.async {
+                    completion(.failure(.responseStatusError(status: response.statusCode,
+                                                             message: "Failed with status: \(response.statusCode)")))
+                }
                 return
             }
 
@@ -71,7 +77,9 @@ class Searcher: Searchable {
             }
         } catch let decodingError {
             NSLog("Error decoding search results: \(decodingError)")
-            completion(.failure(.decodingError(error: decodingError, message: "Failed to decode: \(decodingError)")))
+            DispatchQueue.main.async {
+                completion(.failure(.decodingError(error: decodingError, message: "Failed to decode: \(decodingError)")))
+            }
         }
     }
 }
