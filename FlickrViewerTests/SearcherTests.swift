@@ -22,71 +22,60 @@ class SearcherTests: XCTestCase {
     }
     
     func testParseResponse() {
-        
-        let successExpectation = expectation(description: "Finished parsing data")
-        
         guard let data = loadSampleResponse(filename: "searchResponse") else {
             XCTFail("Failed to load json data")
             return
         }
-        
+
         let searcher = Searcher()
-        searcher.decodeSearchResult(from: data) { result in
-            switch result {
-            case .success(let photos):
-                
-                XCTAssertEqual(photos.page, 1)
-                XCTAssertEqual(photos.pages, 21082)
-                XCTAssertEqual(photos.perPage, 25)
-                XCTAssertEqual(photos.total, 527040)
-                XCTAssertEqual(
-                    photos.photo.first,
-                    Photo(
-                        id: "32407658507",
-                        owner: "38626801@N04",
-                        secret: "73ac8d47d5",
-                        server: "7815",
-                        farm: 8,
-                        title: "20190308_181108",
-                        ispublic: 1,
-                        isfriend: 0,
-                        isfamily: 0
-                    )
-                )
-                
-                successExpectation.fulfill()
-            default:
-                print("whoops")
-            }
-        }
+        let result = searcher.decodeSearchResult(from: data)
         
-        waitForExpectations(timeout: 1, handler: nil)
+        switch result {
+        case .success(let photos):
+            
+            XCTAssertEqual(photos.page, 1)
+            XCTAssertEqual(photos.pages, 21082)
+            XCTAssertEqual(photos.perPage, 25)
+            XCTAssertEqual(photos.total, 527040)
+            XCTAssertEqual(
+                photos.photo.first,
+                Photo(
+                    id: "32407658507",
+                    owner: "38626801@N04",
+                    secret: "73ac8d47d5",
+                    server: "7815",
+                    farm: 8,
+                    title: "20190308_181108",
+                    ispublic: 1,
+                    isfriend: 0,
+                    isfamily: 0
+                )
+            )
+        default:
+            XCTFail("Expected to successfully parse photo")
+        }
     }
     
     func testFailParseResponse() {
-        let failureExpectation = expectation(description: "Expected to fail parsing")
-        
         guard let data = loadSampleResponse(filename: "badSearchResponse") else {
             XCTFail("Failed to load json data")
             return
         }
         
         let searcher = Searcher()
-        searcher.decodeSearchResult(from: data) { result in
-            switch result {
-            case .success(_):
-                break
-            case .failure(let error):
-                switch error {
-                case .decodingError(_,_):
-                    failureExpectation.fulfill()
-                default:
-                    break
-                }
-            }
-        }
+        let result = searcher.decodeSearchResult(from: data)
         
-        waitForExpectations(timeout: 1, handler: nil)
+        switch result {
+        case .failure(let error):
+            switch error {
+            case .decodingError(_,_):
+                XCTAssert(true)
+            default:
+                XCTFail("Error was not of expected type")
+            }
+        default:
+            XCTFail("Expected decode to fail")
+        }
     }
     
     func testSearchSuccess() {

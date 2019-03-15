@@ -39,47 +39,45 @@ class Searcher: Searchable {
         
         dataTask = session.dataTask(with: url) { data, response, error in
             
-            if let error = error {
+            var result: Result<Photos, SearchError> = Result.failure(SearchError.responseError(message: ""))
+            
+            defer {
                 DispatchQueue.main.async {
-                    completion(.failure(.dataTaskError(error: error, message: "Failed to execute data task: \(error)")))
+                    completion(result)
                 }
+            }
+            
+            if let error = error {
+                result = .failure(.dataTaskError(error: error, message: "Failed to execute data task: \(error)"))
                 return
             }
             
             guard let data = data, let response = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion(.failure(.responseError(message: "Failed to retrieve data from response")))
-                }
+                result = .failure(.responseError(message: "Failed to retrieve data from response"))
                 return
             }
             
             guard response.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(.responseStatusError(status: response.statusCode,
-                                                             message: "Failed with status: \(response.statusCode)")))
-                }
+                result = .failure(.responseStatusError(status: response.statusCode,
+                                                             message: "Failed with status: \(response.statusCode)"))
                 return
             }
 
-            self.decodeSearchResult(from: data, completion: completion)
+            result = self.decodeSearchResult(from: data)
         }
         
         dataTask?.resume()
     }
     
-    func decodeSearchResult(from data: Data, completion: @escaping (Result<Photos, SearchError>) -> Void) {
+    func decodeSearchResult(from data: Data) -> Result<Photos, SearchError> {
         do {
             let decoder = JSONDecoder()
             let result = try decoder.decode(PhotosResponse.self, from: data)
             
-            DispatchQueue.main.async {
-                completion(.success(result.photos))
-            }
+            return .success(result.photos)
         } catch let decodingError {
             NSLog("Error decoding search results: \(decodingError)")
-            DispatchQueue.main.async {
-                completion(.failure(.decodingError(error: decodingError, message: "Failed to decode: \(decodingError)")))
-            }
+            return .failure(.decodingError(error: decodingError, message: "Failed to decode: \(decodingError)"))
         }
     }
 }
